@@ -1,0 +1,54 @@
+# 加载必要库  
+library(dplyr)  
+library(nnet)  
+
+# 加载数据  
+load("Lifestyle.rda")  
+load("wellbeing_2_0_demographics_cov.rda")  
+
+# 数据预处理  
+df <- df %>%  
+  merge(Lifestyle) %>%  
+  filter(complete.cases(.)) %>%  
+  mutate(lifestyle_class = factor(HealthyLifestyle, levels = c("unfavorable", "intermediate", "favorable")))  
+
+# 计算 wellbeing 和 lifestyle score的相关性  
+summary(lm(wellbeing ~ lifestyle_score + sex + age + bmi + education + tdi, data = df))  
+
+# 计算 wellbeing 和 lifestyle class 的相关性  
+summary(lm(wellbeing ~ lifestyle_class + sex + age + bmi + education + tdi, data = df))  
+
+
+lifestyle_factors <-  c("healthy_diet", "physical_activity", "sedentary_behavior",   
+                          "social_connection", "sleep", "smoking", "alcohol")   
+
+# 计算 wellbeing 和 lifestyle factor 的相关性  
+for (i in 1:length(lifestyle_factors)) {  
+  cat("\n分析因子:", lifestyle_factors[i], "\n")  
+  model <- summary(lm(wellbeing ~ df[[lifestyle_factors[i]]] + sex + age + bmi + education + tdi, data = df))  
+  print(model) # 打印第一个预测变量(lifestyle factor)的系数相关信息  
+}  
+
+# 计算 ASD PRS 和 lifestyle score的相关性  
+summary(lm(lifestyle_score ~ PRS + sex + age + bmi + education + tdi +   
+             pca1 + pca2 + pca3 + pca4 + pca5 + pca6 + pca7 + pca8 + pca9 + pca10 +   
+             pca11 + pca12 + pca13 + pca14 + pca15 + pca16 + pca17 + pca18 + pca19 + pca20,   
+           data = df))  
+
+# 计算 ASD PRS 和 lifestyle class 的相关性  
+model <- multinom(lifestyle_class ~ PRS + sex + age + bmi + education + tdi +   
+                   pca1 + pca2 + pca3 + pca4 + pca5 + pca6 + pca7 + pca8 + pca9 + pca10 +   
+                   pca11 + pca12 + pca13 + pca14 + pca15 + pca16 + pca17 + pca18 + pca19 + pca20,   
+                 data = df)  
+summary(model)  
+
+# 计算 ASD PRS 和 lifestyle factor 的相关性  
+for (i in 1:length(lifestyle_factors)) {  
+  cat("\n分析因子:", lifestyle_factors[i], "\n")  
+  model <- glm(df[[lifestyle_factors[i]]] ~ PRS + sex + age + bmi + education + tdi +  
+                 pca1 + pca2 + pca3 + pca4 + pca5 + pca6 + pca7 + pca8 + pca9 + pca10 +  
+                 pca11 + pca12 + pca13 + pca14 + pca15 + pca16 + pca17 + pca18 + pca19 + pca20,   
+               family = 'binomial', data = df)  
+  print(summary(model)) 
+}
+
